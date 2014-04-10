@@ -1,0 +1,26 @@
+#!/bin/bash
+
+TOOLBOX_DOCKER_IMAGE=fedora
+TOOLBOX_USER=root
+
+toolboxrc=${HOME}/.toolboxrc
+
+if [ -d ${toolboxrc} ]; then
+	source ${toolboxrc}
+fi
+
+who=$(whoami)
+machinename="${who}-${TOOLBOX_DOCKER_IMAGE}"
+machinepath=/var/lib/toolbox/${machinename}
+
+if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
+        sudo mkdir -p ${machinepath}
+        sudo chown ${who}: ${machinepath}
+
+        docker pull fedora
+        docker run --name=${machinename} fedora /bin/false
+        docker export ${machinename} | sudo tar -x -C ${machinepath} -f -
+        sudo touch ${machinepath}/etc/os-release
+fi
+
+sudo systemd-nspawn -D ${machinepath} --share-system --bind=/:/media/root --user=${TOOLBOX_USER}
