@@ -3,24 +3,24 @@
 TOOLBOX_DOCKER_IMAGE=fedora
 TOOLBOX_USER=root
 
-toolboxrc=${HOME}/.toolboxrc
+toolboxrc="${HOME}"/.toolboxrc
 
-if [ -d ${toolboxrc} ]; then
-	source ${toolboxrc}
+if [ -f "${toolboxrc}" ]; then
+	source "${toolboxrc}"
 fi
 
-who=$(whoami)
-machinename="${who}-${TOOLBOX_DOCKER_IMAGE}"
-machinepath=/var/lib/toolbox/${machinename}
+machinename="${USER}-${TOOLBOX_DOCKER_IMAGE}"
+machinepath="/var/lib/toolbox/${machinename}"
 
 if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
-        sudo mkdir -p ${machinepath}
-        sudo chown ${who}: ${machinepath}
+	sudo mkdir -p "${machinepath}"
+	sudo chown ${USER}: "${machinepath}"
 
-        docker pull fedora
-        docker run --name=${machinename} fedora /bin/false
-        docker export ${machinename} | sudo tar -x -C ${machinepath} -f -
-        sudo touch ${machinepath}/etc/os-release
+	docker pull "${TOOLBOX_DOCKER_IMAGE}"
+	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}" /bin/true
+	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
+	docker rm ${machinename}
+	sudo touch "${machinepath}"/etc/os-release
 fi
 
-sudo systemd-nspawn -D ${machinepath} --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user=${TOOLBOX_USER}
+sudo systemd-nspawn -D "${machinepath}" --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user=${TOOLBOX_USER}
