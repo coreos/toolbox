@@ -17,7 +17,7 @@ listening on ens3, link-type EN10MB (Ethernet), capture size 65535 bytes
 Set a `/etc/passwd` entry for one of the users to `/usr/bin/toolbox`.
 
 ```
-useradd bob -m -p '*' -s /usr/bin/toolbox
+useradd bob -m -p '*' -s /usr/bin/toolbox -g sudo
 ```
 
 ```
