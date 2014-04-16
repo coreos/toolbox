@@ -10,6 +10,9 @@ if [ -f "${toolboxrc}" ]; then
 fi
 
 machinename="${USER}-${TOOLBOX_DOCKER_IMAGE}"
+# Remove any slashes from the docker image path 
+machinename=$(echo $machinename | tr \/ _)
+
 machinepath="/var/lib/toolbox/${machinename}"
 
 if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
