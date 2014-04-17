@@ -9,7 +9,7 @@ if [ -f "${toolboxrc}" ]; then
 	source "${toolboxrc}"
 fi
 
-machinename="${USER}-${TOOLBOX_DOCKER_IMAGE}"
+machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
 machinepath="/var/lib/toolbox/${machinename}"
 
 if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
@@ -23,4 +23,4 @@ if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
 	sudo touch "${machinepath}"/etc/os-release
 fi
 
-sudo systemd-nspawn -D "${machinepath}" --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user=${TOOLBOX_USER}
+sudo systemd-nspawn -D "${machinepath}" --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user="${TOOLBOX_USER}"
