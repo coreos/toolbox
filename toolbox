@@ -23,4 +23,4 @@ if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
 	sudo touch "${machinepath}"/etc/os-release
 fi
 
-sudo systemd-nspawn -D "${machinepath}" --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user="${TOOLBOX_USER}"
+sudo systemd-nspawn -D "${machinepath}" --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user="${TOOLBOX_USER}" "$@"
