@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TOOLBOX_DOCKER_IMAGE=fedora
+TOOLBOX_DOCKER_TAG=latest
 TOOLBOX_USER=root
 
 toolboxrc="${HOME}"/.toolboxrc
@@ -9,15 +10,15 @@ if [ -f "${toolboxrc}" ]; then
 	source "${toolboxrc}"
 fi
 
-machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
+machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}-${TOOLBOX_DOCKER_TAG}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
 machinepath="/var/lib/toolbox/${machinename}"
 
 if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
 	sudo mkdir -p "${machinepath}"
 	sudo chown ${USER}: "${machinepath}"
 
-	docker pull "${TOOLBOX_DOCKER_IMAGE}"
-	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}" /bin/true
+	docker pull "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}"
+	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" /bin/true
 	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
 	docker rm ${machinename}
 	sudo touch "${machinepath}"/etc/os-release
