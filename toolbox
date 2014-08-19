@@ -12,8 +12,8 @@ fi
 
 machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}-${TOOLBOX_DOCKER_TAG}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
 machinepath="/var/lib/toolbox/${machinename}"
-
-if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
+osrelease="${machinepath}/etc/os-release"
+if [ ! -f ${osrelease} ] || systemctl is-failed -q ${machinename} ; then
 	sudo mkdir -p "${machinepath}"
 	sudo chown ${USER}: "${machinepath}"
 
@@ -21,7 +21,7 @@ if [ ! -d ${machinepath} ] || systemctl is-failed ${machinename} ; then
 	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" /bin/true
 	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
 	docker rm ${machinename}
-	sudo touch "${machinepath}"/etc/os-release
+	sudo touch ${osrelease}
 fi
 
 sudo systemd-nspawn -D "${machinepath}" --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user="${TOOLBOX_USER}" "$@"
