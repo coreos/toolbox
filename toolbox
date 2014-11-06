@@ -1,8 +1,18 @@
 #!/bin/bash
 
+set -e
+set -u
+
 TOOLBOX_DOCKER_IMAGE=fedora
 TOOLBOX_DOCKER_TAG=latest
 TOOLBOX_USER=root
+
+hostusr="/media/root/usr"
+expose_docker=""
+if [ $# -ge 1 ] && [ "_$1" = "_-d" ]; then
+	expose_docker=1
+	shift
+fi
 
 toolboxrc="${HOME}"/.toolboxrc
 
@@ -24,4 +34,21 @@ if [ ! -f ${osrelease} ] || systemctl is-failed -q ${machinename} ; then
 	sudo touch ${osrelease}
 fi
 
-sudo systemd-nspawn --directory="${machinepath}" --capability=all --share-system --bind=/:/media/root --bind=/usr:/media/root/usr --user="${TOOLBOX_USER}" "$@"
+# Host directories and files to expose into the container
+mounts=(--bind=/:/media/root --bind=/usr:"${hostusr}")
+
+if [ -n "$expose_docker" ]; then
+	docker_wrap="/var/lib/toolbox/docker_wrap"
+	if [ ! -f "$docker_wrap" ]; then
+		sudo tee "$docker_wrap" > /dev/null <<EOF
+#!/bin/sh
+export LD_LIBRARY_PATH=${hostusr}/lib64
+exec ${hostusr}/bin/docker "\$@"
+EOF
+		sudo chmod 755 "$docker_wrap"
+	fi
+	mounts+=(--bind=/run/docker.sock --bind-ro="${docker_wrap}:/usr/bin/docker")
+fi
+
+
+sudo systemd-nspawn --directory="${machinepath}" --capability=all --share-system "${mounts[@]}" --user="${TOOLBOX_USER}" "$@"
