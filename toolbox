@@ -50,5 +50,4 @@ EOF
 	mounts+=(--bind=/run/docker.sock --bind-ro="${docker_wrap}:/usr/bin/docker")
 fi
 
-
-sudo systemd-nspawn --directory="${machinepath}" --capability=all --share-system "${mounts[@]}" --user="${TOOLBOX_USER}" "$@"
+exec sudo systemd-nspawn --directory="${machinepath}" --capability=all --share-system "${mounts[@]}" --user="${TOOLBOX_USER}" "$@"
