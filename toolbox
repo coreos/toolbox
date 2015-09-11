@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -o pipefail
+
 TOOLBOX_DOCKER_IMAGE=fedora
 TOOLBOX_DOCKER_TAG=latest
 TOOLBOX_USER=root
