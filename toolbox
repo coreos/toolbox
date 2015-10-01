@@ -5,9 +5,9 @@ set -o pipefail
 
 TOOLBOX_DOCKER_IMAGE=fedora
 TOOLBOX_DOCKER_TAG=latest
+TOOLBOX_DOCKER_COMMAND="/bin/true"
 TOOLBOX_USER=root
 TOOLBOX_DIRECTORY="/var/lib/toolbox"
-TOOLBOX_COMMAND="/bin/true"
 
 toolboxrc="${HOME}"/.toolboxrc
 
@@ -23,7 +23,7 @@ if [ ! -f ${osrelease} ] || systemctl is-failed -q ${machinename} ; then
 	sudo chown ${USER}: "${machinepath}"
 
 	docker pull "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}"
-	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" ${TOOLBOX_COMMAND}
+	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" ${TOOLBOX_DOCKER_COMMAND}
 	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
 	docker rm ${machinename}
 	sudo touch ${osrelease}
