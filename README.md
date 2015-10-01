@@ -26,7 +26,7 @@ Simply override environment variables in `$HOME/.toolboxrc`:
 core@core-01 ~ $ cat ~/.toolboxrc
 TOOLBOX_DOCKER_IMAGE=ubuntu-debootstrap
 TOOLBOX_DOCKER_TAG=14.04
-TOOLBOX_COMMAND="/bin/true"
+TOOLBOX_DOCKER_COMMAND="/bin/true"
 core@core-01 ~ $ toolbox
 Spawning container core-ubuntu-debootstrap-14.04 on /var/lib/toolbox/core-ubuntu-debootstrap-14.04.
 Press ^] three times within 1s to kill container.
