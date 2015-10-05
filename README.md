@@ -49,3 +49,9 @@ Spawning container core-fedora-latest on /var/lib/toolbox/core-fedora-latest.
 -bash-4.3 # yum install emacs
 -bash-4.3 # emacs /media/root/etc/systemd/system/docker.service
 ```
+
+## Bugs
+
+Please use the [CoreOS issue tracker][bugs] to report all bugs, issues, and feature requests.
+
+[bugs]: https://github.com/coreos/bugs/issues/new?labels=component/toolbox
