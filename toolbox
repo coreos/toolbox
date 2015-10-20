@@ -22,7 +22,7 @@ if [ ! -f ${osrelease} ] || systemctl is-failed -q ${machinename} ; then
 	sudo chown ${USER}: "${machinepath}"
 
 	docker pull "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}"
-	docker run --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" /bin/true
+	docker create --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" /bin/true
 	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
 	docker rm ${machinename}
 	sudo touch ${osrelease}
