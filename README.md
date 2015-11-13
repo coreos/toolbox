@@ -37,7 +37,8 @@ root@core-01:~# apt-get update && apt-get install tcpdump
 Set an `/etc/passwd` entry for one of the users to `/usr/bin/toolbox`:
 
 ```
-useradd bob -m -p '*' -s /usr/bin/toolbox -g sudo
+useradd bob -m -p '*' -s /usr/bin/toolbox -U -G sudo,docker
+
 ```
 
 Now when SSHing into the system as that user, toolbox will automatically be started:
