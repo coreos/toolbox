@@ -7,6 +7,7 @@ TOOLBOX_DOCKER_IMAGE=fedora
 TOOLBOX_DOCKER_TAG=latest
 TOOLBOX_USER=root
 TOOLBOX_DIRECTORY="/var/lib/toolbox"
+TOOLBOX_BIND="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"
 
 toolboxrc="${HOME}"/.toolboxrc
 
@@ -32,7 +33,5 @@ sudo systemd-nspawn \
 	--directory="${machinepath}" \
 	--capability=all \
 	--share-system \
-	--bind=/:/media/root \
-	--bind=/usr:/media/root/usr \
-	--bind=/run:/media/root/run \
+        "${TOOLBOX_BIND}" \
 	--user="${TOOLBOX_USER}" "$@"
