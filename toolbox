@@ -33,5 +33,5 @@ sudo systemd-nspawn \
 	--directory="${machinepath}" \
 	--capability=all \
 	--share-system \
-        "${TOOLBOX_BIND}" \
+        ${TOOLBOX_BIND} \
 	--user="${TOOLBOX_USER}" "$@"
