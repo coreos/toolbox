@@ -3,17 +3,22 @@
 set -e
 set -o pipefail
 
-TOOLBOX_DOCKER_IMAGE=fedora
-TOOLBOX_DOCKER_TAG=latest
-TOOLBOX_USER=root
-TOOLBOX_DIRECTORY="/var/lib/toolbox"
-TOOLBOX_BIND="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"
-
 toolboxrc="${HOME}"/.toolboxrc
 
 if [ -f "${toolboxrc}" ]; then
+	TDI=$TOOLBOX_DOCKER_IMAGE
+	TDT=$TOOLBOX_DOCKER_TAG
+	TU=$TOOLBOX_USER
+	TD=$TOOLBOX_DIRECTORY
+	TB=$TOOLBOX_BIND
 	source "${toolboxrc}"
 fi
+
+TOOLBOX_DOCKER_IMAGE=${TDI:=${TOOLBOX_DOCKER_IMAGE:=fedora}}
+TOOLBOX_DOCKER_TAG=${TDT:=${TOOLBOX_DOCKER_TAG:=latest}}
+TOOLBOX_USER=${TU:=${TOOLBOX_USER:=root}}
+TOOLBOX_DIRECTORY=${TD:=${TOOLBOX_DIRECTORY:="/var/lib/toolbox"}}
+TOOLBOX_BIND=${TB:=${TOOLBOX_BIND:="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"}}
 
 machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}-${TOOLBOX_DOCKER_TAG}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
 machinepath="${TOOLBOX_DIRECTORY}/${machinename}"
