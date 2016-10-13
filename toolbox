@@ -8,6 +8,8 @@ TOOLBOX_DOCKER_TAG=latest
 TOOLBOX_USER=root
 TOOLBOX_DIRECTORY="/var/lib/toolbox"
 TOOLBOX_BIND="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"
+# Ex: "--setenv=KEY=VALUE"
+TOOLBOX_ENV=""
 
 toolboxrc="${HOME}"/.toolboxrc
 
@@ -34,4 +36,5 @@ sudo systemd-nspawn \
 	--capability=all \
 	--share-system \
         ${TOOLBOX_BIND} \
+        ${TOOLBOX_ENV} \
 	--user="${TOOLBOX_USER}" "$@"
