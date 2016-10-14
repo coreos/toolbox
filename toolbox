@@ -13,6 +13,12 @@ TOOLBOX_ENV=""
 
 toolboxrc="${HOME}"/.toolboxrc
 
+# System defaults
+if [ -f "/etc/default/toolbox" ]; then
+	source "/etc/default/toolbox"
+fi
+
+# User overrides
 if [ -f "${toolboxrc}" ]; then
 	source "${toolboxrc}"
 fi
