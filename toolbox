@@ -5,11 +5,8 @@ set -o pipefail
 
 TOOLBOX_DOCKER_IMAGE=fedora
 TOOLBOX_DOCKER_TAG=latest
+TOOLBOX_RKT_ARGS=
 TOOLBOX_USER=root
-TOOLBOX_DIRECTORY="/var/lib/toolbox"
-TOOLBOX_BIND="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"
-# Ex: "--setenv=KEY=VALUE"
-TOOLBOX_ENV=""
 
 toolboxrc="${HOME}"/.toolboxrc
 
@@ -23,24 +20,45 @@ if [ -f "${toolboxrc}" ]; then
 	source "${toolboxrc}"
 fi
 
-machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}-${TOOLBOX_DOCKER_TAG}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
-machinepath="${TOOLBOX_DIRECTORY}/${machinename}"
-osrelease="${machinepath}/etc/os-release"
-if [ ! -f ${osrelease} ] || systemctl is-failed -q ${machinename} ; then
-	sudo mkdir -p "${machinepath}"
-	sudo chown ${USER}: "${machinepath}"
+# Provide a compatibility layer that interprets command-line arguments
+# to this script as both rkt options and the command to be run inside
+# the container.  The first argument that does not start with a dash is
+# understood to be the program run in the container, and all following
+# arguments are passed to that program.  An exception is when the rkt
+# option --exec= is given first, in which case all arguments are passed
+# to rkt unchanged.
+user_args=(--exec=/usr/bin/bash)
+while [ $# -gt 0 ]; do
+	if [ -n "${user_args[0]}" -a "x${1#-}" = "x$1" ]; then
+		user_args+=(--exec="$1")
+		shift
+		[ $# -gt 0 ] && user_args+=(-- "$@")
+		unset 'user_args[0]'
+		break
+	fi
+	[ "x${1#--exec=}" = "x$1" ] || unset 'user_args[0]'
+	user_args+=("$1")
+	shift
+done
 
-	docker pull "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}"
-	docker create --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" /bin/true
-	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
-	docker rm ${machinename}
-	sudo touch ${osrelease}
-fi
-
-sudo systemd-nspawn \
-	--directory="${machinepath}" \
-	--capability=all \
-	--share-system \
-        ${TOOLBOX_BIND} \
-        ${TOOLBOX_ENV} \
-	--user="${TOOLBOX_USER}" "$@"
+rkt_version=$(rkt version | sed -n 's/^rkt Version: *//ip')
+uuid_file=$(mktemp)
+sudo rkt --insecure-options=image run \
+    --dns=host \
+    --hosts-entry=host \
+    --interactive \
+    --mount=volume=root,target=/media/root \
+    --mount=volume=run,target=/media/root/run \
+    --mount=volume=usr,target=/media/root/usr \
+    --net=host \
+    --stage1-name=coreos.com/rkt/stage1-fly:"$rkt_version" \
+    --uuid-file-save="${uuid_file}" \
+    --volume=root,kind=host,source=/,readOnly=false \
+    --volume=run,kind=host,source=/run,readOnly=false \
+    --volume=usr,kind=host,source=/usr,readOnly=true \
+    ${TOOLBOX_RKT_ARGS} \
+    "docker://${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" \
+    --user="${TOOLBOX_USER}" \
+    "${user_args[@]}"
+sudo rkt rm --uuid-file="${uuid_file}"
+rm -f "${uuid_file}"
