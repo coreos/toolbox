@@ -4,7 +4,7 @@ set -e
 set -o pipefail
 
 TOOLBOX_DOCKER_IMAGE=fedora
-TOOLBOX_DOCKER_TAG=latest
+TOOLBOX_DOCKER_TAG=24
 TOOLBOX_USER=root
 TOOLBOX_DIRECTORY="/var/lib/toolbox"
 TOOLBOX_BIND="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"
