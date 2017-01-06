@@ -26,15 +26,14 @@ fi
 machinename=$(echo "${USER}-${TOOLBOX_DOCKER_IMAGE}-${TOOLBOX_DOCKER_TAG}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
 machinepath="${TOOLBOX_DIRECTORY}/${machinename}"
 osrelease="${machinepath}/etc/os-release"
-if [ ! -f ${osrelease} ] || systemctl is-failed -q ${machinename} ; then
+if [ ! -f "${osrelease}" ] || systemctl is-failed -q "${machinename}" ; then
 	sudo mkdir -p "${machinepath}"
-	sudo chown ${USER}: "${machinepath}"
+	sudo chown "${USER}:" "${machinepath}"
 
-	docker pull "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}"
-	docker create --name=${machinename} "${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}" /bin/true
-	docker export ${machinename} | sudo tar -x -C "${machinepath}" -f -
-	docker rm ${machinename}
-	sudo touch ${osrelease}
+	riid=$(rkt --insecure-options=image fetch "docker://${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}")
+	sudo rkt image extract --overwrite --rootfs-only "${riid}" "${machinepath}"
+	rkt image rm "${riid}"
+	sudo touch "${osrelease}"
 fi
 
 sudo systemd-nspawn \
