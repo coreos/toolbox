@@ -30,9 +30,9 @@ if [ ! -f "${osrelease}" ] || systemctl is-failed -q "${machinename}" ; then
 	sudo mkdir -p "${machinepath}"
 	sudo chown "${USER}:" "${machinepath}"
 
-	riid=$(rkt --insecure-options=image fetch "docker://${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}")
+	riid=$(sudo rkt --insecure-options=image fetch "docker://${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}")
 	sudo rkt image extract --overwrite --rootfs-only "${riid}" "${machinepath}"
-	rkt image rm "${riid}"
+	sudo rkt image rm "${riid}"
 	sudo touch "${osrelease}"
 fi
 
