@@ -7,12 +7,12 @@ machine=$(uname -m)
 
 case ${machine} in
 	aarch64 )
-		TOOLBOX_NAME=fedora-base-24-1.1.aarch64
-		TOOLBOX_DOCKER_ARCHIVE="https://dl.fedoraproject.org/pub/fedora-secondary/releases/24/Docker/aarch64/images/Fedora-Docker-Base-24-1.1.aarch64.tar.xz"
+		TOOLBOX_DOCKER_IMAGE=aarch64/fedora
+		TOOLBOX_DOCKER_TAG=latest
 		;;
 	x86_64 )
 		TOOLBOX_DOCKER_IMAGE=fedora
-		TOOLBOX_DOCKER_TAG=24
+		TOOLBOX_DOCKER_TAG=latest
 		;;
 	* )
 		echo "Warning: Unknown machine type ${machine}" >&2
