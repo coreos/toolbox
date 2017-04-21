@@ -68,6 +68,11 @@ if [ ! -f "${osrelease}" ] || systemctl is-failed -q "${machinename}" ; then
 	sudo touch "${osrelease}"
 fi
 
+# Special case for when SSH tries to pass a shell command with -c
+if [ "x${1-}" == x-c ]; then
+	set /bin/sh "$@"
+fi
+
 sudo systemd-nspawn \
 	--directory="${machinepath}" \
 	--capability=all \
