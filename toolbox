@@ -42,6 +42,11 @@ if [[ -n "${TOOLBOX_DOCKER_IMAGE}" ]] && [[ -n "${TOOLBOX_DOCKER_TAG}" ]]; then
 	have_docker_image="y"
 fi
 
+# Set user to root if not set
+if [ -z "$USER" ]; then
+	export USER=root
+fi
+
 machinename=$(echo "${USER}-${TOOLBOX_NAME}" | sed -r 's/[^a-zA-Z0-9_.-]/_/g')
 machinepath="${TOOLBOX_DIRECTORY}/${machinename}"
 osrelease="${machinepath}/etc/os-release"
