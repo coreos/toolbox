@@ -24,6 +24,7 @@ TOOLBOX_DIRECTORY="/var/lib/toolbox"
 TOOLBOX_BIND="--bind=/:/media/root --bind=/usr:/media/root/usr --bind=/run:/media/root/run"
 # Ex: "--setenv=KEY=VALUE"
 TOOLBOX_ENV=""
+TOOLBOX_FETCH_OPTIONS="--insecure-options=image"
 
 toolboxrc="${HOME}"/.toolboxrc
 
@@ -50,7 +51,7 @@ if [ ! -f "${osrelease}" ] || systemctl is-failed -q "${machinename}" ; then
 	sudo chown "${USER}:" "${machinepath}"
 
 	if [[ -n "${have_docker_image}" ]]; then
-		riid=$(sudo --preserve-env rkt --insecure-options=image fetch "docker://${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}")
+		riid=$(sudo --preserve-env rkt ${TOOLBOX_FETCH_OPTIONS} fetch "docker://${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}")
 		sudo --preserve-env rkt image extract --overwrite --rootfs-only "${riid}" "${machinepath}"
 		sudo --preserve-env rkt image rm "${riid}"
 	elif [[ -n "${TOOLBOX_DOCKER_ARCHIVE}" ]]; then
