@@ -7,7 +7,7 @@ machine=$(uname -m)
 
 case ${machine} in
 	aarch64 )
-		TOOLBOX_DOCKER_IMAGE=aarch64/fedora
+		TOOLBOX_DOCKER_IMAGE=arm64v8/fedora
 		TOOLBOX_DOCKER_TAG=latest
 		;;
 	x86_64 )
