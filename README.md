@@ -2,6 +2,10 @@
 
 toolbox is a small script that launches a container to let you bring in your favorite debugging or admin tools.
 
+There are currently two scripts that live within this repository:
+ - toolbox: designed for Container Linux, uses rkt and systemd-nspawn
+ - rhcos-toolbox: designed for Red Hat CoreOS, uses podman
+
 ## Usage
 
 ```
