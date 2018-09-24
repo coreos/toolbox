@@ -4,7 +4,8 @@ set -eo pipefail
 trap cleanup EXIT
 
 setup() {
-    TOOLBOX_IMAGE=registry.fedoraproject.org/fedora:latest
+    REGISTRY=registry.fedoraproject.org
+    IMAGE=fedora:latest
     TOOLBOX_NAME=toolbox-"${USER}"
 
     # Allow user overrides
@@ -14,9 +15,14 @@ setup() {
         echo ".toolboxrc file detected, overriding defaults..."
         source "${toolboxrc}"
     fi
+    TOOLBOX_IMAGE="${REGISTRY}"/"${IMAGE}"
 }
 
 run() {
+    if ! image_exists; then
+        image_pull
+    fi
+
     if ! container_exists; then
         echo "Spawning a container '$TOOLBOX_NAME' with image '$TOOLBOX_IMAGE'"
         container_create
@@ -47,6 +53,24 @@ container_exists() {
 
 container_state() {
     sudo podman inspect "$TOOLBOX_NAME" --format '{{.State.Status}}'
+}
+
+image_exists() {
+    sudo podman inspect "$TOOLBOX_IMAGE" &>/dev/null
+}
+
+image_pull() {
+    if ! sudo podman pull "$TOOLBOX_IMAGE"; then
+        read -r -n 1 -p "Would you like to authenticate to registry: '${REGISTRY}' and try again? [y/N] "
+        echo
+
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo podman login "${REGISTRY}"
+            sudo podman pull "$TOOLBOX_IMAGE"
+        else
+            exit 1
+        fi
+    fi
 }
 
 container_create() {

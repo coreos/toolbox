@@ -25,6 +25,8 @@ listening on ens3, link-type EN10MB (Ethernet), capture size 65535 bytes
 
 toolbox uses a Fedora-based userspace environment by default, but this can be changed to any Docker image. Simply override environment variables in `$HOME/.toolboxrc`:
 
+#### toolbox
+
 ```
 core@core-01 ~ $ cat ~/.toolboxrc
 TOOLBOX_DOCKER_IMAGE=ubuntu-debootstrap
@@ -33,6 +35,16 @@ core@core-01 ~ $ toolbox
 Spawning container core-ubuntu-debootstrap-14.04 on /var/lib/toolbox/core-ubuntu-debootstrap-14.04.
 Press ^] three times within 1s to kill container.
 root@core-01:~# apt-get update && apt-get install tcpdump
+```
+
+#### rhcos-toolbox
+
+```
+core@core-01 ~ $ cat ~/.toolboxrc
+REGISTRY=registry.redhat.io
+IMAGE=rhel7/rhel-tools:latest
+core@core-01 ~ $ toolbox
+Spawning a container 'toolbox-test' with image 'registry.redhat.io/rhel7/rhel-tools:latest'
 ```
 
 ### Automatically enter toolbox on login
