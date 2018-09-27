@@ -61,13 +61,13 @@ image_exists() {
 
 image_pull() {
     if ! sudo podman pull "$TOOLBOX_IMAGE"; then
-        read -r -n 1 -p "Would you like to authenticate to registry: '${REGISTRY}' and try again? [y/N] "
-        echo
+        read -r -p "Would you like to authenticate to registry: '${REGISTRY}' and try again? [y/N] "
 
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ $REPLY =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
             sudo podman login "${REGISTRY}"
             sudo podman pull "$TOOLBOX_IMAGE"
         else
+            echo "Exiting..."
             exit 1
         fi
     fi
@@ -110,7 +110,7 @@ main() {
     cleanup
 }
 
-if [ -z "$1" ]; then
+if [ ! -n "$*" ]; then
     set /bin/sh "$@"
 fi
 
