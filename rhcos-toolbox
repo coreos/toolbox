@@ -1,0 +1,117 @@
+#!/bin/bash
+set -eo pipefail
+
+trap cleanup EXIT
+
+setup() {
+    REGISTRY=registry.fedoraproject.org
+    IMAGE=fedora:latest
+    TOOLBOX_NAME=toolbox-"${USER}"
+
+    # Allow user overrides
+
+    toolboxrc="${HOME}"/.toolboxrc
+    if [ -f "${toolboxrc}" ]; then
+        echo ".toolboxrc file detected, overriding defaults..."
+        source "${toolboxrc}"
+    fi
+    TOOLBOX_IMAGE="${REGISTRY}"/"${IMAGE}"
+}
+
+run() {
+    if ! image_exists; then
+        image_pull
+    fi
+
+    if ! container_exists; then
+        echo "Spawning a container '$TOOLBOX_NAME' with image '$TOOLBOX_IMAGE'"
+        container_create
+    else
+        echo "Container '$TOOLBOX_NAME' already exists. Starting..."
+        echo "(To remove the container and start with a fresh toolbox, run: sudo podman rm '$TOOLBOX_NAME')"
+    fi
+
+    local state=$(container_state)
+    if [[ "$state" == configured ]] || [[ "$state" == exited ]]; then
+        container_start
+    elif [[ "$state" != running ]]; then
+        echo "Container '$TOOLBOX_NAME' in unknown state: '$state'"
+        return 1
+    fi
+
+    echo "Container started successfully."
+    container_exec "$@"
+}
+
+cleanup() {
+    sudo podman stop "$TOOLBOX_NAME" &>/dev/null
+}
+
+container_exists() {
+    sudo podman inspect "$TOOLBOX_NAME" &>/dev/null
+}
+
+container_state() {
+    sudo podman inspect "$TOOLBOX_NAME" --format '{{.State.Status}}'
+}
+
+image_exists() {
+    sudo podman inspect "$TOOLBOX_IMAGE" &>/dev/null
+}
+
+image_pull() {
+    if ! sudo podman pull "$TOOLBOX_IMAGE"; then
+        read -r -p "Would you like to authenticate to registry: '${REGISTRY}' and try again? [y/N] "
+
+        if [[ $REPLY =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
+            sudo podman login "${REGISTRY}"
+            sudo podman pull "$TOOLBOX_IMAGE"
+        else
+            echo "Exiting..."
+            exit 1
+        fi
+    fi
+}
+
+container_create() {
+    if ! sudo podman create \
+                 --hostname toolbox \
+                 --name "$TOOLBOX_NAME" \
+                 --network host \
+                 --privileged \
+                 --security-opt label=disable \
+                 --tty \
+                 --volume /:/media/root:rslave \
+                 "$TOOLBOX_IMAGE" 2>&1; then
+        echo "$0: failed to create container '$TOOLBOX_NAME'"
+        exit 1
+    fi
+}
+
+container_start() {
+    if ! sudo podman start "$TOOLBOX_NAME" 2>&1; then
+        echo "$0: failed to start container '$TOOLBOX_NAME'"
+        exit 1
+    fi
+}
+
+container_exec() {
+    sudo podman exec \
+            --env LANG="$LANG" \
+            --env TERM="$TERM" \
+            --tty \
+            "$TOOLBOX_NAME" \
+            "$@"
+}
+
+main() {
+    setup
+    run "$@"
+    cleanup
+}
+
+if [ ! -n "$*" ]; then
+    set /bin/sh "$@"
+fi
+
+main "$@"
