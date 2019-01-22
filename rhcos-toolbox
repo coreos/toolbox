@@ -4,8 +4,8 @@ set -eo pipefail
 trap cleanup EXIT
 
 setup() {
-    REGISTRY=registry.fedoraproject.org
-    IMAGE=fedora:latest
+    REGISTRY=registry.redhat.io
+    IMAGE=rhel7/support-tools
     TOOLBOX_NAME=toolbox-"${USER}"
 
     # Allow user overrides
@@ -23,23 +23,30 @@ run() {
         image_pull
     fi
 
+    local runlabel=$(image_runlabel)
     if ! container_exists; then
         echo "Spawning a container '$TOOLBOX_NAME' with image '$TOOLBOX_IMAGE'"
-        container_create
+        if [[ -z "$runlabel" ]]; then
+            container_create
+        else
+            echo "Detected RUN label in the container image. Using that as the default..."
+            container_runlabel
+            return
+        fi
     else
-        echo "Container '$TOOLBOX_NAME' already exists. Starting..."
+        echo "Container '$TOOLBOX_NAME' already exists. Trying to start..."
         echo "(To remove the container and start with a fresh toolbox, run: sudo podman rm '$TOOLBOX_NAME')"
     fi
 
     local state=$(container_state)
-    if [[ "$state" == configured ]] || [[ "$state" == exited ]]; then
+    if [[ "$state" == configured ]] || [[ "$state" == exited ]] || [[ "$state" == stopped ]]; then
         container_start
     elif [[ "$state" != running ]]; then
         echo "Container '$TOOLBOX_NAME' in unknown state: '$state'"
         return 1
     fi
 
-    echo "Container started successfully."
+    echo "Container started successfully. To exit, type 'exit'."
     container_exec "$@"
 }
 
@@ -57,6 +64,10 @@ container_state() {
 
 image_exists() {
     sudo podman inspect "$TOOLBOX_IMAGE" &>/dev/null
+}
+
+image_runlabel() {
+    sudo podman container runlabel --display RUN "$TOOLBOX_IMAGE"
 }
 
 image_pull() {
@@ -91,6 +102,13 @@ container_create() {
 container_start() {
     if ! sudo podman start "$TOOLBOX_NAME" 2>&1; then
         echo "$0: failed to start container '$TOOLBOX_NAME'"
+        exit 1
+    fi
+}
+
+container_runlabel() {
+    if ! sudo podman container runlabel --name "$TOOLBOX_NAME" RUN "$TOOLBOX_IMAGE" 2>&1; then
+        echo "$0: failed to runlabel on image '$TOOLBOX_IMAGE'"
         exit 1
     fi
 }
