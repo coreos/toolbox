@@ -5,7 +5,7 @@ trap cleanup EXIT
 
 setup() {
     REGISTRY=registry.redhat.io
-    IMAGE=rhel7/support-tools
+    IMAGE=rhel8/support-tools
     TOOLBOX_NAME=toolbox-"${USER}"
 
     # Allow user overrides
