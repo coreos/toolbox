@@ -3,17 +3,17 @@ set -eo pipefail
 
 trap cleanup EXIT
 
+# Defaults
+REGISTRY=registry.redhat.io
+IMAGE=rhel8/support-tools
+TOOLBOX_NAME=toolbox-"${USER}"
+TOOLBOXRC="${HOME}"/.toolboxrc
+
 setup() {
-    REGISTRY=registry.redhat.io
-    IMAGE=rhel8/support-tools
-    TOOLBOX_NAME=toolbox-"${USER}"
-
     # Allow user overrides
-
-    toolboxrc="${HOME}"/.toolboxrc
-    if [ -f "${toolboxrc}" ]; then
+    if [ -f "${TOOLBOXRC}" ]; then
         echo ".toolboxrc file detected, overriding defaults..."
-        source "${toolboxrc}"
+        source "${TOOLBOXRC}"
     fi
     TOOLBOX_IMAGE="${REGISTRY}"/"${IMAGE}"
 }
@@ -122,8 +122,34 @@ container_exec() {
             "$@"
 }
 
+show_help() {
+    echo "USAGE: toolbox [-h/--help] [command]
+toolbox is a small script that launches a container to let you bring in your favorite debugging or admin tools.
+The toolbox container is a pet container and will be restarted on following runs.
+To remove the container and start fresh, do sudo podman rm ${TOOLBOX_NAME}.
+
+Options:
+  -h/--help: Shows this help message
+
+You may override the following variables by setting them in ${TOOLBOXRC}:
+- REGISTRY: The registry to pull from. Default: $REGISTRY
+- IMAGE: The image and tag from the registry to pull. Default: $IMAGE
+- TOOLBOX_NAME: The name to use for the local container. Default: $TOOLBOX_NAME
+
+Example toolboxrc:
+REGISTRY=my.special.registry.example.com
+IMAGE=debug:latest
+TOOLBOX_NAME=special-debug-container"
+}
+
 main() {
+    # Execute setup first so we get proper variables
     setup
+    # If we are passed a help switch, show help and exit
+    if [[ "$1" =~ ^(--help|-h)$ ]]; then
+        show_help
+        exit 0
+    fi
     run "$@"
     cleanup
 }
