@@ -71,8 +71,8 @@ image_runlabel() {
 }
 
 image_pull() {
-    if ! sudo podman pull "$TOOLBOX_IMAGE"; then
-        read -r -p "Would you like to authenticate to registry: '${REGISTRY}' and try again? [y/N] "
+    if ! sudo podman pull --authfile /var/lib/kubelet/config.json "$TOOLBOX_IMAGE"; then
+        read -r -p "Would you like to manually authenticate to registry: '${REGISTRY}' and try again? [y/N] "
 
         if [[ $REPLY =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
             sudo podman login "${REGISTRY}"
