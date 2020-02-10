@@ -118,6 +118,7 @@ container_exec() {
             --env LANG="$LANG" \
             --env TERM="$TERM" \
             --tty \
+            --interactive \
             "$TOOLBOX_NAME" \
             "$@"
 }
