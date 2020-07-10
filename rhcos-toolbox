@@ -27,7 +27,8 @@ run() {
     if ! container_exists; then
         echo "Spawning a container '$TOOLBOX_NAME' with image '$TOOLBOX_IMAGE'"
         if [[ -z "$runlabel" ]]; then
-            container_create
+            container_run
+            return
         else
             echo "Detected RUN label in the container image. Using that as the default..."
             container_runlabel
@@ -84,17 +85,27 @@ image_pull() {
     fi
 }
 
-container_create() {
-    if ! sudo podman create \
+container_run() {
+    if ! sudo podman run \
                  --hostname toolbox \
                  --name "$TOOLBOX_NAME" \
-                 --network host \
                  --privileged \
-                 --security-opt label=disable \
+                 --net=host \
+                 --pid=host \
+                 --ipc=host \
                  --tty \
-                 --volume /:/media/root:rslave \
+                 --interactive \
+                 -e HOST=/host \
+                 -e NAME="$TOOLBOX_NAME" \
+                 -e IMAGE="$IMAGE" \
+                 --security-opt label=disable \
+                 --volume /run:/run \
+                 --volume /var/log:/var/log \
+                 --volume /etc/machine-id:/etc/machine-id \
+                 --volume /etc/localtime:/etc/localtime \
+                 --volume /:/host \
                  "$TOOLBOX_IMAGE" 2>&1; then
-        echo "$0: failed to create container '$TOOLBOX_NAME'"
+        echo "$0: failed to run container '$TOOLBOX_NAME'"
         exit 1
     fi
 }
@@ -114,13 +125,18 @@ container_runlabel() {
 }
 
 container_exec() {
+    local cmd=$@
+    if [ ! -n "$cmd" ]; then
+        cmd=$(sudo podman inspect "$TOOLBOX_IMAGE" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
+    fi
+
     sudo podman exec \
-            --env LANG="$LANG" \
-            --env TERM="$TERM" \
-            --tty \
-            --interactive \
-            "$TOOLBOX_NAME" \
-            "$@"
+        --env LANG="$LANG" \
+        --env TERM="$TERM" \
+        --tty \
+        --interactive \
+        "$TOOLBOX_NAME" \
+        "$cmd"
 }
 
 show_help() {
@@ -154,9 +170,5 @@ main() {
     run "$@"
     cleanup
 }
-
-if [ ! -n "$*" ]; then
-    set /bin/sh "$@"
-fi
 
 main "$@"
