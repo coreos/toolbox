@@ -67,9 +67,3 @@ Press ^] three times within 1s to kill container.
 ...
 [root@localhost ~]# emacs /media/root/etc/systemd/system/docker.service
 ```
-
-## Bugs
-
-Please use the [CoreOS issue tracker][bugs] to report all bugs, issues, and feature requests.
-
-[bugs]: https://github.com/coreos/bugs/issues/new?labels=component/toolbox
