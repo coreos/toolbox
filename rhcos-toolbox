@@ -68,7 +68,7 @@ image_exists() {
 }
 
 image_runlabel() {
-    sudo podman container runlabel --display RUN "$TOOLBOX_IMAGE"
+    sudo podman image inspect "$TOOLBOX_IMAGE" --format "{{.Labels.run}}"
 }
 
 image_pull() {
