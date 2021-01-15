@@ -6,7 +6,7 @@ trap cleanup EXIT
 # Defaults
 REGISTRY=registry.redhat.io
 IMAGE=rhel8/support-tools
-TOOLBOX_NAME=toolbox-"${USER}"
+TOOLBOX_NAME=toolbox-"$(whoami)"
 TOOLBOXRC="${HOME}"/.toolboxrc
 
 setup() {
