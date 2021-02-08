@@ -26,7 +26,7 @@ run() {
     local runlabel=$(image_runlabel)
     if ! container_exists; then
         echo "Spawning a container '$TOOLBOX_NAME' with image '$TOOLBOX_IMAGE'"
-        if [[ -z "$runlabel" ]]; then
+        if [[ -z "$runlabel" ]] || [[ "$runlabel" == "<no value>" ]]; then
             container_run
             return
         else
