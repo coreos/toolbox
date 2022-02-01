@@ -68,8 +68,9 @@ image_exists() {
 }
 
 image_runlabel() {
-    sudo podman image inspect "$TOOLBOX_IMAGE" --format "{{.Labels.run}}"
+    sudo podman image inspect "$TOOLBOX_IMAGE" --format '{{- if index .Labels "run" -}}{{.Labels.run}}{{- end -}}'
 }
+
 
 image_pull() {
     if ! sudo --preserve-env podman pull --authfile /var/lib/kubelet/config.json "$TOOLBOX_IMAGE"; then
