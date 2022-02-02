@@ -21,6 +21,14 @@ setup() {
 run() {
     if ! image_exists; then
         image_pull
+    elif ! image_fresh; then
+        read -r -p "There is a newer version of ${TOOLBOX_IMAGE} available. Would you like to pull it? [y/N] "
+
+        if [[ $REPLY =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
+            image_pull
+        else
+            echo "Skipping retrieval of new image.."
+        fi
     fi
 
     local runlabel=$(image_runlabel)
@@ -65,6 +73,20 @@ container_state() {
 
 image_exists() {
     sudo podman inspect "$TOOLBOX_IMAGE" &>/dev/null
+}
+
+# returns 0 if the image on disk is "fresh", i.e. no newer image on remote
+# registry. (or if we couldn't inspect the registry successfully)
+image_fresh() {
+    local_date=$(sudo podman inspect "$TOOLBOX_IMAGE" --format '{{.Created}}')
+    if ! remote_date=$(sudo skopeo inspect --authfile /var/lib/kubelet/config.json docker://"$TOOLBOX_IMAGE" --format '{{.Created}}'); then
+        echo "Error inspecting $TOOLBOX_IMAGE via skopeo"
+        return
+    fi
+    # if the date on the registry is *NOT* newer than the local image date
+    # then we return 1. (doing a less-than comparison of the strings always
+    # fails if they are the same, hence the weird conditional here)
+    ! [[ "${remote_date}" > "${local_date}" ]]
 }
 
 image_runlabel() {
