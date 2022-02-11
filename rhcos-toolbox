@@ -35,12 +35,10 @@ run() {
     if ! container_exists; then
         echo "Spawning a container '$TOOLBOX_NAME' with image '$TOOLBOX_IMAGE'"
         if [[ -z "$runlabel" ]] || [[ "$runlabel" == "<no value>" ]]; then
-            container_run
-            return
+            container_create
         else
             echo "Detected RUN label in the container image. Using that as the default..."
-            container_runlabel
-            return
+            container_create_runlabel
         fi
     else
         echo "Container '$TOOLBOX_NAME' already exists. Trying to start..."
@@ -108,27 +106,27 @@ image_pull() {
     fi
 }
 
-container_run() {
-    if ! sudo podman run \
-                 --hostname toolbox \
-                 --name "$TOOLBOX_NAME" \
-                 --privileged \
-                 --net=host \
-                 --pid=host \
-                 --ipc=host \
-                 --tty \
-                 --interactive \
-                 -e HOST=/host \
-                 -e NAME="$TOOLBOX_NAME" \
-                 -e IMAGE="$IMAGE" \
-                 --security-opt label=disable \
-                 --volume /run:/run \
-                 --volume /var/log:/var/log \
-                 --volume /etc/machine-id:/etc/machine-id \
-                 --volume /etc/localtime:/etc/localtime \
-                 --volume /:/host \
-                 "$TOOLBOX_IMAGE" 2>&1; then
-        echo "$0: failed to run container '$TOOLBOX_NAME'"
+container_create() {
+    if ! sudo podman create \
+        --hostname toolbox \
+        --name "$TOOLBOX_NAME" \
+        --privileged \
+        --net=host \
+        --pid=host \
+        --ipc=host \
+        --tty \
+        --interactive \
+        -e HOST=/host \
+        -e NAME="$TOOLBOX_NAME" \
+        -e IMAGE="$IMAGE" \
+        --security-opt label=disable \
+        --volume /run:/run \
+        --volume /var/log:/var/log \
+        --volume /etc/machine-id:/etc/machine-id \
+        --volume /etc/localtime:/etc/localtime \
+        --volume /:/host \
+        "$TOOLBOX_IMAGE" 2>&1; then
+        echo "$0: failed to create container '$TOOLBOX_NAME'"
         exit 1
     fi
 }
@@ -140,26 +138,41 @@ container_start() {
     fi
 }
 
-container_runlabel() {
-    if ! sudo podman container runlabel --name "$TOOLBOX_NAME" RUN "$TOOLBOX_IMAGE" 2>&1; then
-        echo "$0: failed to runlabel on image '$TOOLBOX_IMAGE'"
+container_create_runlabel() {
+    # Variable replacement logic reproduced from:
+    # https://github.com/containers/podman/blob/29d7ab3f82e38c442e449739e218349b9a4a16ea/pkg/domain/infra/abi/containers_runlabel.go#L226
+    local pod
+    pod="$(echo "$runlabel" \
+        | sed 's/podman run/sudo podman create/' \
+        | sed 's/--name NAME/--name $TOOLBOX_NAME/' \
+        | sed 's/NAME=NAME/NAME=$TOOLBOX_NAME/' \
+        | sed 's/IMAGE=IMAGE/IMAGE=$TOOLBOX_IMAGE/' \
+        | sed 's/host IMAGE/host $TOOLBOX_IMAGE/')"
+    if ! eval "$pod" ; then
+        echo "$0: failed to create container from runlabel '$TOOLBOX_NAME'"
         exit 1
     fi
 }
 
 container_exec() {
-    local cmd=$@
-    if [ ! -n "$cmd" ]; then
+    if [[ "$#" -eq 0 ]]; then
         cmd=$(sudo podman inspect "$TOOLBOX_IMAGE" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
+        sudo podman exec \
+            --env LANG="$LANG" \
+            --env TERM="$TERM" \
+            --tty \
+            --interactive \
+            "$TOOLBOX_NAME" \
+            "$cmd"
+    else
+        sudo podman exec \
+            --env LANG="$LANG" \
+            --env TERM="$TERM" \
+            --tty \
+            --interactive \
+            "$TOOLBOX_NAME" \
+            "$@"
     fi
-
-    sudo podman exec \
-        --env LANG="$LANG" \
-        --env TERM="$TERM" \
-        --tty \
-        --interactive \
-        "$TOOLBOX_NAME" \
-        "$cmd"
 }
 
 show_help() {
