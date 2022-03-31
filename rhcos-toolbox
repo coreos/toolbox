@@ -60,7 +60,9 @@ run() {
         return 1
     fi
 
-    echo "Container started successfully. To exit, type 'exit'."
+    if [[ "$#" -eq "0" ]]; then
+        echo "Container started successfully. To exit, type 'exit'."
+    fi
     container_exec "$@"
 }
 
@@ -85,6 +87,7 @@ image_exists() {
 image_fresh() {
     echo "Checking if there is a newer version of ${TOOLBOX_IMAGE} available..."
     local_date=$(sudo podman image inspect "${TOOLBOX_IMAGE}" --format '{{.Created}}')
+
     if ! remote_date=$(sudo skopeo inspect --authfile "${AUTHFILE}" docker://"${TOOLBOX_IMAGE}" --format '{{.Created}}'); then
         echo "Error inspecting ${TOOLBOX_IMAGE} via skopeo"
         return
