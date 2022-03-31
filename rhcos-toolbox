@@ -63,23 +63,24 @@ cleanup() {
 }
 
 container_exists() {
-    sudo podman inspect "$TOOLBOX_NAME" &>/dev/null
+    sudo podman container inspect "${TOOLBOX_NAME}" &>/dev/null
 }
 
 container_state() {
-    sudo podman inspect "$TOOLBOX_NAME" --format '{{.State.Status}}'
+    sudo podman container inspect "${TOOLBOX_NAME}" --format '{{.State.Status}}'
 }
 
 image_exists() {
-    sudo podman inspect "$TOOLBOX_IMAGE" &>/dev/null
+    sudo podman image inspect "${TOOLBOX_IMAGE}" &>/dev/null
 }
 
 # returns 0 if the image on disk is "fresh", i.e. no newer image on remote
 # registry. (or if we couldn't inspect the registry successfully)
 image_fresh() {
-    local_date=$(sudo podman inspect "$TOOLBOX_IMAGE" --format '{{.Created}}')
-    if ! remote_date=$(sudo skopeo inspect --authfile "$AUTHFILE" docker://"$TOOLBOX_IMAGE" --format '{{.Created}}'); then
-        echo "Error inspecting $TOOLBOX_IMAGE via skopeo"
+    echo "Checking if there is a newer version of ${TOOLBOX_IMAGE} available..."
+    local_date=$(sudo podman image inspect "${TOOLBOX_IMAGE}" --format '{{.Created}}')
+    if ! remote_date=$(sudo skopeo inspect --authfile "${AUTHFILE}" docker://"${TOOLBOX_IMAGE}" --format '{{.Created}}'); then
+        echo "Error inspecting ${TOOLBOX_IMAGE} via skopeo"
         return
     fi
     # if the date on the registry is *NOT* newer than the local image date
@@ -157,7 +158,7 @@ container_create_runlabel() {
 
 container_exec() {
     if [[ "$#" -eq 0 ]]; then
-        cmd=$(sudo podman inspect "$TOOLBOX_IMAGE" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
+        cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
         sudo podman exec \
             --env LANG="$LANG" \
             --env TERM="$TERM" \
