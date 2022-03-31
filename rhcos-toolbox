@@ -22,11 +22,17 @@ setup() {
 run() {
     if ! image_exists; then
         image_pull
+        if container_exists; then
+            sudo podman rm "${TOOLBOX_NAME}"
+        fi
     elif ! image_fresh; then
         read -r -p "There is a newer version of ${TOOLBOX_IMAGE} available. Would you like to pull it? [y/N] "
 
         if [[ $REPLY =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
             image_pull
+            if container_exists; then
+                sudo podman rm "${TOOLBOX_NAME}"
+            fi
         else
             echo "Skipping retrieval of new image.."
         fi
