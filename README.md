@@ -1,10 +1,6 @@
 # toolbox - bring your tools with you
 
-toolbox is a small script that launches a container to let you bring in your favorite debugging or admin tools.
-
-There are currently two scripts that live within this repository:
- - toolbox: designed for Container Linux, uses rkt and systemd-nspawn
- - rhcos-toolbox: designed for Red Hat CoreOS, uses podman
+rhcos-toolbox is a small script, designed for RHEL CoreOS, that launches a podman container to let you bring in your favorite debugging or admin tools.
 
 ## Usage
 
@@ -24,20 +20,6 @@ listening on ens3, link-type EN10MB (Ethernet), capture size 65535 bytes
 ### Use a custom image
 
 toolbox uses a Fedora-based userspace environment by default, but this can be changed to any Docker image. Simply override environment variables in `$HOME/.toolboxrc`:
-
-#### toolbox
-
-```
-core@core-01 ~ $ cat ~/.toolboxrc
-TOOLBOX_DOCKER_IMAGE=ubuntu-debootstrap
-TOOLBOX_DOCKER_TAG=14.04
-core@core-01 ~ $ toolbox
-Spawning container core-ubuntu-debootstrap-14.04 on /var/lib/toolbox/core-ubuntu-debootstrap-14.04.
-Press ^] three times within 1s to kill container.
-root@core-01:~# apt-get update && apt-get install tcpdump
-```
-
-#### rhcos-toolbox
 
 ```
 core@core-01 ~ $ cat ~/.toolboxrc
