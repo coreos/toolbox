@@ -53,7 +53,7 @@ run() {
     fi
 
     local state=$(container_state)
-    if [[ "${state}" == configured ]] || [[ "${state}" == exited ]] || [[ "${state}" == stopped ]]; then
+    if [[ "${state}" == configured ]] || [[ "${state}" == created ]] || [[ "${state}" == exited ]] || [[ "${state}" == stopped ]]; then
         container_start
     elif [[ "${state}" != running ]]; then
         echo "Container '${TOOLBOX_NAME}' in unknown state: '$state'"
