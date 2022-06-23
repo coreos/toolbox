@@ -168,21 +168,11 @@ container_create_runlabel() {
 container_exec() {
     if [[ "$#" -eq 0 ]]; then
         cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
-        sudo podman exec \
-            --env LANG="${LANG}" \
-            --env TERM="${TERM}" \
-            --tty \
-            --interactive \
+        sudo podman attach \
             "${TOOLBOX_NAME}" \
-            "${cmd}"
     else
-        sudo podman exec \
-            --env LANG="${LANG}" \
-            --env TERM="${TERM}" \
-            --tty \
-            --interactive \
-            "${TOOLBOX_NAME}" \
-            "$@"
+        sudo podman attach \
+            "${TOOLBOX_NAME}" 
     fi
 }
 
