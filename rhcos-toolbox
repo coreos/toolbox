@@ -118,6 +118,7 @@ image_pull() {
 }
 
 container_create() {
+    local -r cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
     if ! sudo podman create \
         --hostname toolbox \
         --name "${TOOLBOX_NAME}" \
@@ -127,16 +128,16 @@ container_create() {
         --ipc=host \
         --tty \
         --interactive \
-        -e HOST=/host \
-        -e NAME="${TOOLBOX_NAME}" \
-        -e IMAGE="${IMAGE}" \
+        --env HOST=/host \
+        --env NAME="${TOOLBOX_NAME}" \
+        --env IMAGE="${IMAGE}" \
         --security-opt label=disable \
         --volume /run:/run \
         --volume /var/log:/var/log \
         --volume /etc/machine-id:/etc/machine-id \
         --volume /etc/localtime:/etc/localtime \
         --volume /:/host \
-        "${TOOLBOX_IMAGE}" 2>&1; then
+        "${TOOLBOX_IMAGE}" "${cmd}" 2>&1; then
         echo "$0: failed to create container '${TOOLBOX_NAME}'"
         exit 1
     fi
@@ -167,22 +168,9 @@ container_create_runlabel() {
 
 container_exec() {
     if [[ "$#" -eq 0 ]]; then
-        cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
-        sudo podman exec \
-            --env LANG="${LANG}" \
-            --env TERM="${TERM}" \
-            --tty \
-            --interactive \
-            "${TOOLBOX_NAME}" \
-            "${cmd}"
+        sudo podman attach "${TOOLBOX_NAME}"
     else
-        sudo podman exec \
-            --env LANG="${LANG}" \
-            --env TERM="${TERM}" \
-            --tty \
-            --interactive \
-            "${TOOLBOX_NAME}" \
-            "$@"
+        echo "${@}; exit" | sudo podman attach "${TOOLBOX_NAME}"
     fi
 }
 
