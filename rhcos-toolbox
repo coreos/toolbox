@@ -135,7 +135,9 @@ container_create() {
         --volume /var/log:/var/log \
         --volume /etc/machine-id:/etc/machine-id \
         --volume /etc/localtime:/etc/localtime \
-        --volume /:/host \
+        --volume /:/host \        
+        --env LANG="${LANG}" \
+        --env TERM="${TERM}" \
         "${TOOLBOX_IMAGE}" 2>&1; then
         echo "$0: failed to create container '${TOOLBOX_NAME}'"
         exit 1
