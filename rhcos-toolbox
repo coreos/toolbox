@@ -169,7 +169,7 @@ container_exec() {
     if [[ "$#" -eq 0 ]]; then
         cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
         sudo podman attach \
-            "${TOOLBOX_NAME}" \
+            "${TOOLBOX_NAME}"
     else
         sudo podman attach \
             "${TOOLBOX_NAME}" 
