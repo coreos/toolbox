@@ -127,17 +127,17 @@ container_create() {
         --ipc=host \
         --tty \
         --interactive \
-        -e HOST=/host \
-        -e NAME="${TOOLBOX_NAME}" \
-        -e IMAGE="${IMAGE}" \
+        --env HOST=/host \
+        --env NAME="${TOOLBOX_NAME}" \
+        --env IMAGE="${IMAGE}" \
+        --env LANG="${LANG}" \
+        --env TERM="${TERM}" \
         --security-opt label=disable \
         --volume /run:/run \
         --volume /var/log:/var/log \
         --volume /etc/machine-id:/etc/machine-id \
         --volume /etc/localtime:/etc/localtime \
         --volume /:/host \        
-        --env LANG="${LANG}" \
-        --env TERM="${TERM}" \
         "${TOOLBOX_IMAGE}" 2>&1; then
         echo "$0: failed to create container '${TOOLBOX_NAME}'"
         exit 1
