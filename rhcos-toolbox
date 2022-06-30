@@ -168,39 +168,15 @@ container_create_runlabel() {
 }
 
 container_exec() {
-    local arg=$@
-    echo "$arg"
-    echo "$#"
     if [[ "$#" -eq 0 ]]; then
-        echo "exec1"
         cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
         sudo podman attach \
             "${TOOLBOX_NAME}"
     else
-        echo "exec2"
         sudo podman run \
-                 --hostname toolbox \
-                 --name "$TOOLBOX_NAME" \
-                 --privileged \
-                 --net=host \
-                 --pid=host \
-                 --ipc=host \
-                 --tty \
-                 --interactive \
-                 --env HOST=/host \
-                 --env NAME="$TOOLBOX_NAME" \
-                 --env IMAGE="$IMAGE" \
-                 --env LANG="${LANG}" \
-                 --env TERM="${TERM}" \
                  --rm
-                 --security-opt label=disable \
-                 --volume /run:/run \
-                 --volume /var/log:/var/log \
-                 --volume /etc/machine-id:/etc/machine-id \
-                 --volume /etc/localtime:/etc/localtime \
-                 --volume /:/host \
                  "$TOOLBOX_IMAGE" \
-                 "$arg"
+                 "$@"
     fi
 }
 
