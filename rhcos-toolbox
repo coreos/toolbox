@@ -178,7 +178,7 @@ container_exec() {
                  --env TERM="${TERM}" \
                  --tty \
                  --interactive \
-                 --rm
+                 --rm \
                  "$TOOLBOX_IMAGE" \
                  "$@"
     fi
