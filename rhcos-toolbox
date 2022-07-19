@@ -130,8 +130,6 @@ container_create() {
         --env HOST=/host \
         --env NAME="${TOOLBOX_NAME}" \
         --env IMAGE="${IMAGE}" \
-        --env LANG="${LANG}" \
-        --env TERM="${TERM}" \
         --security-opt label=disable \
         --volume /run:/run \
         --volume /var/log:/var/log \
