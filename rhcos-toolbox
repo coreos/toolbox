@@ -24,11 +24,13 @@ setup() {
 }
 
 run() {
+    # Pull the container image if it does not exists yet
     if ! image_exists; then
         image_pull
         if container_exists; then
             sudo podman rm "${TOOLBOX_NAME}"
         fi
+    # If it already exists, make sure it is up-to-date
     elif ! image_fresh; then
         >&2 read -r -p "There is a newer version of ${TOOLBOX_IMAGE} available. Would you like to pull it? [y/N] "
         if [[ ${REPLY} =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
@@ -41,6 +43,8 @@ run() {
         fi
     fi
 
+    # If the container does not already exists, create it, while making sure to
+    # use the option from the RUN label if provided
     local runlabel=$(image_runlabel)
     if ! container_exists; then
         errecho "Spawning a container '${TOOLBOX_NAME}' with image '${TOOLBOX_IMAGE}'"
@@ -55,6 +59,7 @@ run() {
         errecho "(To remove the container and start with a fresh toolbox, run: sudo podman rm '${TOOLBOX_NAME}')"
     fi
 
+    # Start our freshly created container
     local state=$(container_state)
     if [[ "${state}" == configured ]] || [[ "${state}" == created ]] || [[ "${state}" == exited ]] || [[ "${state}" == stopped ]]; then
         container_start
@@ -66,6 +71,8 @@ run() {
     if [[ "$#" -eq "0" ]]; then
         errecho "Container started successfully. To exit, type 'exit'."
     fi
+    # Attach to the interactive shell in the container or directly execute the
+    # command passed as argument
     container_exec "$@"
 }
 
