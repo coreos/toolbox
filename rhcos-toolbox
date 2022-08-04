@@ -10,59 +10,69 @@ AUTHFILE=/var/lib/kubelet/config.json
 TOOLBOX_NAME=toolbox-"$(whoami)"
 TOOLBOXRC="${HOME}"/.toolboxrc
 
+errecho() {
+    >&2 echo "${@}"
+}
+
 setup() {
     # Allow user overrides
     if [ -f "${TOOLBOXRC}" ]; then
-        echo ".toolboxrc file detected, overriding defaults..."
+        errecho ".toolboxrc file detected, overriding defaults..."
         source "${TOOLBOXRC}"
     fi
     TOOLBOX_IMAGE="${REGISTRY}"/"${IMAGE}"
 }
 
 run() {
+    # Pull the container image if it does not exists yet
     if ! image_exists; then
         image_pull
         if container_exists; then
             sudo podman rm "${TOOLBOX_NAME}"
         fi
+    # If it already exists, make sure it is up-to-date
     elif ! image_fresh; then
-        read -r -p "There is a newer version of ${TOOLBOX_IMAGE} available. Would you like to pull it? [y/N] "
-
+        >&2 read -r -p "There is a newer version of ${TOOLBOX_IMAGE} available. Would you like to pull it? [y/N] "
         if [[ ${REPLY} =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
             image_pull
             if container_exists; then
                 sudo podman rm "${TOOLBOX_NAME}"
             fi
         else
-            echo "Skipping retrieval of new image.."
+            errecho "Skipping retrieval of new image.."
         fi
     fi
 
+    # If the container does not already exists, create it, while making sure to
+    # use the option from the RUN label if provided
     local runlabel=$(image_runlabel)
     if ! container_exists; then
-        echo "Spawning a container '${TOOLBOX_NAME}' with image '${TOOLBOX_IMAGE}'"
+        errecho "Spawning a container '${TOOLBOX_NAME}' with image '${TOOLBOX_IMAGE}'"
         if [[ -z "${runlabel}" ]] || [[ "${runlabel}" == "<no value>" ]]; then
             container_create
         else
-            echo "Detected RUN label in the container image. Using that as the default..."
+            errecho "Detected RUN label in the container image. Using that as the default..."
             container_create_runlabel
         fi
     else
-        echo "Container '${TOOLBOX_NAME}' already exists. Trying to start..."
-        echo "(To remove the container and start with a fresh toolbox, run: sudo podman rm '${TOOLBOX_NAME}')"
+        errecho "Container '${TOOLBOX_NAME}' already exists. Trying to start..."
+        errecho "(To remove the container and start with a fresh toolbox, run: sudo podman rm '${TOOLBOX_NAME}')"
     fi
 
+    # Start our freshly created container
     local state=$(container_state)
     if [[ "${state}" == configured ]] || [[ "${state}" == created ]] || [[ "${state}" == exited ]] || [[ "${state}" == stopped ]]; then
         container_start
     elif [[ "${state}" != running ]]; then
-        echo "Container '${TOOLBOX_NAME}' in unknown state: '$state'"
+        errecho "Container '${TOOLBOX_NAME}' in unknown state: '$state'"
         return 1
     fi
 
     if [[ "$#" -eq "0" ]]; then
-        echo "Container started successfully. To exit, type 'exit'."
+        errecho "Container started successfully. To exit, type 'exit'."
     fi
+    # Attach to the interactive shell in the container or directly execute the
+    # command passed as argument
     container_exec "$@"
 }
 
@@ -85,11 +95,11 @@ image_exists() {
 # returns 0 if the image on disk is "fresh", i.e. no newer image on remote
 # registry. (or if we couldn't inspect the registry successfully)
 image_fresh() {
-    echo "Checking if there is a newer version of ${TOOLBOX_IMAGE} available..."
+    errecho "Checking if there is a newer version of ${TOOLBOX_IMAGE} available..."
     local_date=$(sudo podman image inspect "${TOOLBOX_IMAGE}" --format '{{.Created}}')
 
     if ! remote_date=$(sudo skopeo inspect --authfile "${AUTHFILE}" docker://"${TOOLBOX_IMAGE}" --format '{{.Created}}'); then
-        echo "Error inspecting ${TOOLBOX_IMAGE} via skopeo"
+        errecho "Error inspecting ${TOOLBOX_IMAGE} via skopeo"
         return
     fi
     # if the date on the registry is *NOT* newer than the local image date
@@ -105,19 +115,20 @@ image_runlabel() {
 
 image_pull() {
     if ! sudo --preserve-env podman pull --authfile "${AUTHFILE}" "${TOOLBOX_IMAGE}"; then
-        read -r -p "Would you like to manually authenticate to registry: '${REGISTRY}' and try again? [y/N] "
+        >&2 read -r -p "Would you like to manually authenticate to registry: '${REGISTRY}' and try again? [y/N] "
 
         if [[ ${REPLY} =~ ^([Yy][Ee][Ss]|[Yy])+$ ]]; then
             sudo --preserve-env podman login --authfile "${AUTHFILE}" "${REGISTRY}"
             sudo --preserve-env podman pull --authfile "${AUTHFILE}" "${TOOLBOX_IMAGE}"
         else
-            echo "Exiting..."
+            errecho "Exiting..."
             exit 1
         fi
     fi
 }
 
 container_create() {
+    local -r cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
     if ! sudo podman create \
         --hostname toolbox \
         --name "${TOOLBOX_NAME}" \
@@ -127,24 +138,24 @@ container_create() {
         --ipc=host \
         --tty \
         --interactive \
-        -e HOST=/host \
-        -e NAME="${TOOLBOX_NAME}" \
-        -e IMAGE="${IMAGE}" \
+        --env HOST=/host \
+        --env NAME="${TOOLBOX_NAME}" \
+        --env IMAGE="${IMAGE}" \
         --security-opt label=disable \
         --volume /run:/run \
         --volume /var/log:/var/log \
         --volume /etc/machine-id:/etc/machine-id \
         --volume /etc/localtime:/etc/localtime \
         --volume /:/host \
-        "${TOOLBOX_IMAGE}" 2>&1; then
-        echo "$0: failed to create container '${TOOLBOX_NAME}'"
+        "${TOOLBOX_IMAGE}" "${cmd}"; then
+        errecho "$0: failed to create container '${TOOLBOX_NAME}'"
         exit 1
     fi
 }
 
 container_start() {
-    if ! sudo podman start "${TOOLBOX_NAME}" 2>&1; then
-        echo "$0: failed to start container '${TOOLBOX_NAME}'"
+    if ! sudo podman start "${TOOLBOX_NAME}"; then
+        errecho "$0: failed to start container '${TOOLBOX_NAME}'"
         exit 1
     fi
 }
@@ -160,34 +171,21 @@ container_create_runlabel() {
         | sed 's/IMAGE=IMAGE/IMAGE=${TOOLBOX_IMAGE}/' \
         | sed 's/host IMAGE/host ${TOOLBOX_IMAGE}/')"
     if ! eval "${pod}" ; then
-        echo "$0: failed to create container from runlabel '${TOOLBOX_NAME}'"
+        errecho "$0: failed to create container from runlabel '${TOOLBOX_NAME}'"
         exit 1
     fi
 }
 
 container_exec() {
     if [[ "$#" -eq 0 ]]; then
-        cmd=$(sudo podman image inspect "${TOOLBOX_IMAGE}" | jq -re ".[].Config.Cmd[0]") || cmd="/bin/sh"
-        sudo podman exec \
-            --env LANG="${LANG}" \
-            --env TERM="${TERM}" \
-            --tty \
-            --interactive \
-            "${TOOLBOX_NAME}" \
-            "${cmd}"
+        sudo podman attach "${TOOLBOX_NAME}"
     else
-        sudo podman exec \
-            --env LANG="${LANG}" \
-            --env TERM="${TERM}" \
-            --tty \
-            --interactive \
-            "${TOOLBOX_NAME}" \
-            "$@"
+        echo "${@}; exit" | sudo podman attach "${TOOLBOX_NAME}"
     fi
 }
 
 show_help() {
-    echo "USAGE: toolbox [-h/--help] [command]
+    errecho "USAGE: toolbox [-h/--help] [command]
 toolbox is a small script that launches a container to let you bring in your favorite debugging or admin tools.
 The toolbox container is a pet container and will be restarted on following runs.
 To remove the container and start fresh, do sudo podman rm ${TOOLBOX_NAME}.
