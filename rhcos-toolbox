@@ -98,7 +98,7 @@ image_fresh() {
     errecho "Checking if there is a newer version of ${TOOLBOX_IMAGE} available..."
     local_date=$(sudo podman image inspect "${TOOLBOX_IMAGE}" --format '{{.Created}}')
 
-    if ! remote_date=$(sudo skopeo inspect --authfile "${AUTHFILE}" docker://"${TOOLBOX_IMAGE}" --format '{{.Created}}'); then
+    if ! remote_date=$(sudo --preserve-env skopeo inspect --authfile "${AUTHFILE}" docker://"${TOOLBOX_IMAGE}" --format '{{.Created}}'); then
         errecho "Error inspecting ${TOOLBOX_IMAGE} via skopeo"
         return
     fi
