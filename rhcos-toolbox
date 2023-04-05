@@ -5,7 +5,7 @@ trap cleanup EXIT
 
 # Defaults
 REGISTRY=registry.redhat.io
-IMAGE=rhel8/support-tools
+IMAGE=rhel9/support-tools
 AUTHFILE=/var/lib/kubelet/config.json
 TOOLBOX_NAME=toolbox-"$(whoami)"
 TOOLBOXRC="${HOME}"/.toolboxrc
