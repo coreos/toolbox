@@ -18,6 +18,8 @@ setup() {
     # Allow user overrides
     if [ -f "${TOOLBOXRC}" ]; then
         errecho ".toolboxrc file detected, overriding defaults..."
+        # This file only potentially exists on a running system
+        # shellcheck disable=SC1090
         source "${TOOLBOXRC}"
     fi
     TOOLBOX_IMAGE="${REGISTRY}"/"${IMAGE}"
@@ -45,7 +47,8 @@ run() {
 
     # If the container does not already exists, create it, while making sure to
     # use the option from the RUN label if provided
-    local runlabel=$(image_runlabel)
+    local runlabel
+    runlabel=$(image_runlabel)
     if ! container_exists; then
         errecho "Spawning a container '${TOOLBOX_NAME}' with image '${TOOLBOX_IMAGE}'"
         if [[ -z "${runlabel}" ]] || [[ "${runlabel}" == "<no value>" ]]; then
@@ -60,7 +63,8 @@ run() {
     fi
 
     # Start our freshly created container
-    local state=$(container_state)
+    local state
+    state=$(container_state)
     if [[ "${state}" == configured ]] || [[ "${state}" == created ]] || [[ "${state}" == exited ]] || [[ "${state}" == stopped ]]; then
         container_start
     elif [[ "${state}" != running ]]; then
@@ -180,7 +184,7 @@ container_exec() {
     if [[ "$#" -eq 0 ]]; then
         sudo podman attach "${TOOLBOX_NAME}"
     else
-        echo "${@}; exit" | sudo podman attach "${TOOLBOX_NAME}"
+        echo "${*}; exit" | sudo podman attach "${TOOLBOX_NAME}"
     fi
 }
 
