@@ -146,11 +146,19 @@ container_create() {
         --env NAME="${TOOLBOX_NAME}" \
         --env IMAGE="${IMAGE}" \
         --security-opt label=disable \
-        --volume /run:/run \
-        --volume /var/log:/var/log \
+        --volume /:/host \
         --volume /etc/machine-id:/etc/machine-id \
         --volume /etc/localtime:/etc/localtime \
-        --volume /:/host \
+        --volume /run/systemd/journal:/run/systemd/journal \
+        --volume /run/systemd/sessions:/run/systemd/sessions \
+        --volume /run/systemd/system:/run/systemd/system \
+        --volume /run/systemd/users:/run/systemd/users \
+        --volume /run/udev/data:/run/udev/data \
+        --volume /run/udev/tags:/run/udev/tags \
+        --volume /tmp:/tmp:rslave \
+        --volume /var/lib/systemd/coredump:/var/lib/systemd/coredump \
+        --volume /var/log/journal:/var/log/journal \
+        --volume /var/mnt:/var/mnt:rslave \
         "${TOOLBOX_IMAGE}" "${cmd}"; then
         errecho "$0: failed to create container '${TOOLBOX_NAME}'"
         exit 1
